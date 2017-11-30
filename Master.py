@@ -5,21 +5,23 @@ import os.path
 #import thread  
 import threading
 from threading import Thread
-#inc=0
+import requests
+
+commit_list = []
+
 def run():
+	nxt =0
 	port=8001
-	max_conn=5
+	max_conn=15
 	BUFFER_SIZE=1024
 	
 	
 	#SETUP
 	serverSocket = socket(AF_INET,SOCK_STREAM)
 	serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-	#do i need to have threads here so the server is listening to every client node??
 	serverSocket.bind((gethostbyname(gethostname()), port))
-	#ip=(gethostbyname(gethostname()))
-	
-	
+	laod_commits()
+
 	#WAIT FOR CONNECTION
 	print( 'The server is ready to listen \n')	  
 	
@@ -31,7 +33,9 @@ def run():
 				  
 			#START THREAD FOR CONNECTION
 			conn, addr = serverSocket.accept() #acept connection from browser
-			threading.Thread(target=new_worker, args=(conn, addr)).start()
+			threading.Thread(target=new_worker, args=(conn, addr,nxt)).start()
+			
+			
 		
 		except Exception as e:
 			if serverSocket:
@@ -39,13 +43,20 @@ def run():
 				#print "Could not open socket:", message
 			sys.exit(1) 
 	
-	#CLOSE CONNECTION 
-		serverSocket.close()
+		nxt=nxt+1
+		serverSocket.listen(max_conn)
 	
-def new_worker(conn,addr):
-	inc=1
-	conn.send(str(inc).encode())
-	inc=inc +1
+def new_worker(conn,addr,nxt):
+	print(commit_list[nxt])
+	conn.send(commit_list[nxt].encode())
+	
+def laod_commits():
+	repo= requests.get('https://api.github.com/repos/nolanev/CS4400/commits')
+
+	for item in repo.json():
+		commit_list.append(item['sha'])
+
+
 	
 if __name__ == "__main__":
 	run()
