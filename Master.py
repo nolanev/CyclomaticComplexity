@@ -5,6 +5,7 @@ import os.path
 #import thread  
 import threading
 from threading import Thread
+
 import requests
 
 commit_list = []
@@ -33,6 +34,7 @@ def run():
 				  
 			#START THREAD FOR CONNECTION
 			conn, addr = serverSocket.accept() #acept connection from browser
+		
 			threading.Thread(target=new_worker, args=(conn, addr,nxt)).start()
 			
 			
@@ -47,16 +49,22 @@ def run():
 		serverSocket.listen(max_conn)
 	
 def new_worker(conn,addr,nxt):
-	print(commit_list[nxt])
+	print("sending ", commit_list[nxt])
 	conn.send(commit_list[nxt].encode())
 	
 def laod_commits():
-	repo= requests.get('https://api.github.com/repos/nolanev/CS4400/commits')
-
+	token='XXXX'
+	payload = {'access_token': token}
+	repo= requests.get('https://api.github.com/repos/nolanev/CS4400/commits', payload)
+	while 'next' in repo.links:
+		for item in repo.json():
+			commit_list.append(item['sha'])
+		print(repo.links['next']['url'])
+		repo = requests.get(repo.links['next']['url'])
 	for item in repo.json():
-		commit_list.append(item['sha'])
-
-
+			commit_list.append(item['sha'])
+	#print(commit_list)
+	print(len(commit_list))
 	
 if __name__ == "__main__":
 	run()

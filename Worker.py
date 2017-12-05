@@ -10,12 +10,13 @@ import json
 import threading
 from threading import Thread
 from git import Repo
+from pprint import pprint
+from re import match
 BUFFER_SIZE=1024
 
 def run():
 
 	#Repo.clone_from(https://github.com/nolanev/CS4400, repo)
-	#acf1633fa54ece1702f2035d673c533c99c6d4ca
 	
 	while True:
 		#connect to lock server
@@ -33,12 +34,33 @@ def run():
 			print("bye!")
 			conn.close()
 			sys.exit()
-		do_work(reply)
-		time.sleep(10)
+		do_work(reply,clientSocket)
+		time.sleep(3)
 		
-def do_work(reply):
-	repo= requests.get('https://api.github.com/repos/nolanev/CS4400/commits',reply)
+def do_work(reply, conn):
+	sha=reply
+	blob_urls = []
+	files = []
+	token='XXXX'
+	payload = {
+		'recursive': 'true',
+		'access_token': token
+	}
 	
-		
+	repo = requests.get("https://api.github.com/repos/nolanev/CS4400/git/trees/{}".format(sha), params=payload)	
+	file_tree = repo.json()['tree']
+	for item in file_tree:
+		if item['type'] == 'blob':
+			blob_urls.append(item['url'])
+	
+	payload = {'access_token': token}
+	headers = {'Accept': 'application/vnd.github.v3.raw+json'} #gets the raw text?
+	
+	for i, url in enumerate(blob_urls):
+		repo = requests.get(url, params=payload, headers=headers)
+		files.append(repo.text)		
+		#files[i]=repo.text
+		print(files[i])
+
 if __name__ == "__main__":
 	run()
