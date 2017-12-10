@@ -14,40 +14,45 @@ from pprint import pprint
 from re import match
 BUFFER_SIZE=1024
 
-def run():
 
-	#Repo.clone_from(https://github.com/nolanev/CS4400, repo)
+
+def run():
 	
 	while True:
-		#connect to lock server
 		clientSocket=socket(AF_INET,SOCK_STREAM)
 		clientSocket.connect((gethostbyname(gethostname()),8001))
 		#send request
 		msg ="READY"
 		clientSocket.send(msg.encode())
-		print("SENT ", msg)
-		#if reply granted
+		#print("SENT ", msg)
+			#if reply granted
 		reply=clientSocket.recv(BUFFER_SIZE).decode()
-		print("RECIEVED ", reply)
+			#print("RECIEVED ", reply)
 		
 		if "DONE" in reply:
 			print("bye!")
 			conn.close()
 			sys.exit()
-		do_work(reply,clientSocket)
-		time.sleep(3)
+		else:	
+			do_work(reply,clientSocket)
+			
+			
+		#reply=clientSocket.recv(BUFFER_SIZE).decode()
 		
-def do_work(reply, conn):
+def do_work(reply,conn):
 	sha=reply
 	blob_urls = []
 	files = []
-	token='XXXX'
+	cc=[]
+	token='411243e1cd58733f3356d387bb1e9475240b8bb9'
 	payload = {
 		'recursive': 'true',
 		'access_token': token
 	}
 	
-	repo = requests.get("https://api.github.com/repos/nolanev/CS4400/git/trees/{}".format(sha), params=payload)	
+	#repo = requests.get("https://api.github.com/repos/nolanev/CS4400/git/trees/{}".format(sha), params=payload)
+	repo = requests.get("https://api.github.com/repos/nolanev/Distributed-File-System/git/trees/{}".format(sha), params=payload)	#smaller repo to make life earlier
+	#https://github.com/nolanev/Distributed-File-System
 	file_tree = repo.json()['tree']
 	for item in file_tree:
 		if item['type'] == 'blob':
@@ -60,7 +65,15 @@ def do_work(reply, conn):
 		repo = requests.get(url, params=payload, headers=headers)
 		files.append(repo.text)		
 		#files[i]=repo.text
-		print(files[i])
-
+		cc.append(len(files[i]))
+		#print(cc[i])
+	avg=getavg(cc)
+	msg=str(avg) + ' '
+	
+	conn.send(msg.encode())
+	
+def getavg(cc):
+	return sum(cc)/len(cc)
+	
 if __name__ == "__main__":
 	run()

@@ -5,11 +5,12 @@ import os.path
 #import thread  
 import threading
 from threading import Thread
+BUFFER_SIZE=1024
 
 import requests
 
 commit_list = []
-
+results=[]
 def run():
 	nxt =0
 	port=8001
@@ -35,7 +36,7 @@ def run():
 			#START THREAD FOR CONNECTION
 			conn, addr = serverSocket.accept() #acept connection from browser
 		
-			threading.Thread(target=new_worker, args=(conn, addr,nxt)).start()
+			threading.Thread(target=msg_decode, args=(conn, addr,nxt)).start()
 			
 			
 		
@@ -47,15 +48,33 @@ def run():
 	
 		nxt=nxt+1
 		serverSocket.listen(max_conn)
-	
+
+def msg_decode(conn,addr,nxt):
+	ans=conn.recv(BUFFER_SIZE).decode()
+	if "READY" in ans:
+		print("recieved ready sending more work")
+		new_worker(conn,addr,nxt)
+		recive_data(conn,addr,nxt)
+		conn.close()
+	else:
+		print("error")
+		sys.exit()
+		
 def new_worker(conn,addr,nxt):
 	print("sending ", commit_list[nxt])
 	conn.send(commit_list[nxt].encode())
 	
+def recive_data(conn,addr,nxt):
+	ans=conn.recv(BUFFER_SIZE).decode()
+	ans=float(ans)
+	print("recieved", ans)
+	results.append(ans)
+	
 def laod_commits():
-	token='XXXX'
+	token='411243e1cd58733f3356d387bb1e9475240b8bb9'
 	payload = {'access_token': token}
-	repo= requests.get('https://api.github.com/repos/nolanev/CS4400/commits', payload)
+	#repo= requests.get('https://api.github.com/repos/nolanev/CS4400/commits', payload)	
+	repo= requests.get('https://api.github.com/repos/nolanev/Distributed-File-System/commits', payload)
 	while 'next' in repo.links:
 		for item in repo.json():
 			commit_list.append(item['sha'])
