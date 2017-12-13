@@ -10,8 +10,10 @@ import json
 import threading
 from threading import Thread
 from git import Repo
-from pprint import pprint
-from re import match
+import radon
+from radon.cli import Config
+from radon.complexity import SCORE
+from radon.cli.harvest import CCHarvester
 BUFFER_SIZE=1024
 
 
@@ -44,7 +46,7 @@ def do_work(reply,conn):
 	blob_urls = []
 	files = []
 	cc=[]
-	token='411243e1cd58733f3356d387bb1e9475240b8bb9'
+	token='XXX'
 	payload = {
 		'recursive': 'true',
 		'access_token': token
@@ -55,7 +57,8 @@ def do_work(reply,conn):
 	#https://github.com/nolanev/Distributed-File-System
 	file_tree = repo.json()['tree']
 	for item in file_tree:
-		if item['type'] == 'blob':
+		if item['type'] == 'blob' and (".py" in item['path']):
+
 			blob_urls.append(item['url'])
 	
 	payload = {'access_token': token}
@@ -63,17 +66,40 @@ def do_work(reply,conn):
 	
 	for i, url in enumerate(blob_urls):
 		repo = requests.get(url, params=payload, headers=headers)
-		files.append(repo.text)		
-		#files[i]=repo.text
-		cc.append(len(files[i]))
-		#print(cc[i])
-	avg=getavg(cc)
-	msg=str(avg) + ' '
+		with open('./repo/{}.py'.format(i), 'w') as f:
+			files.append('./repo/{}.py'.format(i)) #list holding all the file names
+			f.write(repo.text) #put text of all files in the commit into python files in directory repo
+	avg=getCC(files)		
+	msg="Complexity of commit: " + str(avg) 
 	
 	conn.send(msg.encode())
 	
-def getavg(cc):
-	return sum(cc)/len(cc)
+def getCC(files):
+	config = Config(
+			exclude="",
+			ignore="",
+			order=SCORE,
+			no_assert=True,
+			show_complexity=True,
+			average=True,
+			total_average=True,
+			show_closures=True,
+			min='A',
+			max='F'
+			)
+	commit_complexity=0
+	numfiles=0
+	for i ,item in enumerate(files):
+		f = open(files[i], 'r')
+		results = CCHarvester(files[i], config).gobble(f)
+		numfiles +=1
+		print("here")
+		total_cc = 0
+		for result in results:
+			commit_complexity += int(result.complexity)
+			#print(commit_complexity)
+				
+	return commit_complexity / numfiles
 	
 if __name__ == "__main__":
 	run()

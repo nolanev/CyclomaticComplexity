@@ -38,8 +38,6 @@ def run():
 		
 			threading.Thread(target=msg_decode, args=(conn, addr,nxt)).start()
 			
-			
-		
 		except Exception as e:
 			if serverSocket:
 				serverSocket.close()
@@ -65,18 +63,20 @@ def new_worker(conn,addr,nxt):
 	conn.send(commit_list[nxt].encode())
 	
 def recive_data(conn,addr,nxt):
-	ans=conn.recv(BUFFER_SIZE).decode()
-	ans=float(ans)
-	print("recieved", ans)
+	msg=conn.recv(BUFFER_SIZE).decode()
+	splitMessage = msg.split('\n')
+	ans = splitMessage[0].split(':')[1].strip()
+	print(ans)
 	results.append(ans)
 	
 def laod_commits():
-	token='411243e1cd58733f3356d387bb1e9475240b8bb9'
+	token='XXX'
 	payload = {'access_token': token}
 	#repo= requests.get('https://api.github.com/repos/nolanev/CS4400/commits', payload)	
 	repo= requests.get('https://api.github.com/repos/nolanev/Distributed-File-System/commits', payload)
 	while 'next' in repo.links:
 		for item in repo.json():
+			#print("first sha: ", item['sha'])
 			commit_list.append(item['sha'])
 		print(repo.links['next']['url'])
 		repo = requests.get(repo.links['next']['url'])
