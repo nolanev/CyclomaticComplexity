@@ -33,7 +33,7 @@ def run():
 		
 		if "DONE" in reply:
 			print("bye!")
-			conn.close()
+			clientSocket.close()
 			sys.exit()
 		else:	
 			do_work(reply,clientSocket)
@@ -46,7 +46,7 @@ def do_work(reply,conn):
 	blob_urls = []
 	files = []
 	cc=[]
-	token='XXX'
+	token='fc8bac5dfd0f603b5471a13090a2a101a47a6e10'
 	payload = {
 		'recursive': 'true',
 		'access_token': token
@@ -69,9 +69,11 @@ def do_work(reply,conn):
 		with open('./repo/{}.py'.format(i), 'w') as f:
 			files.append('./repo/{}.py'.format(i)) #list holding all the file names
 			f.write(repo.text) #put text of all files in the commit into python files in directory repo
-	avg=getCC(files)		
-	msg="Complexity of commit: " + str(avg) 
-	
+	avg=getCC(files)
+	if avg!=None:
+		msg="Complexity of commit: " + str(avg) 
+	else:
+		msg="done"
 	conn.send(msg.encode())
 	
 def getCC(files):
@@ -93,13 +95,13 @@ def getCC(files):
 		f = open(files[i], 'r')
 		results = CCHarvester(files[i], config).gobble(f)
 		numfiles +=1
-		print("here")
+		#print("here")
 		total_cc = 0
 		for result in results:
 			commit_complexity += int(result.complexity)
 			#print(commit_complexity)
-				
-	return commit_complexity / numfiles
-	
+	if numfiles !=0:	
+		return commit_complexity / numfiles
+	else: return None
 if __name__ == "__main__":
 	run()
