@@ -6,6 +6,7 @@ import os.path
 import time
 import requests
 import json
+import shutil
 
 import threading
 from threading import Thread
@@ -16,8 +17,8 @@ from radon.complexity import SCORE
 from radon.cli.harvest import CCHarvester
 BUFFER_SIZE=1024
 
-
-
+workernum= int(sys.argv[1])
+commitdir='./commit' + str(workernum) +'/'
 def run():
 	
 	while True:
@@ -46,11 +47,12 @@ def do_work(reply,conn):
 	blob_urls = []
 	files = []
 	cc=[]
-	token='fc8bac5dfd0f603b5471a13090a2a101a47a6e10'
+	token='9ac4ec87c0c8536a5995b1b8d813cc162ce7d2a7'
 	payload = {
 		'recursive': 'true',
 		'access_token': token
 	}
+	os.mkdir(commitdir)
 	
 	#repo = requests.get("https://api.github.com/repos/nolanev/CS4400/git/trees/{}".format(sha), params=payload)
 	repo = requests.get("https://api.github.com/repos/nolanev/Distributed-File-System/git/trees/{}".format(sha), params=payload)	#smaller repo to make life earlier
@@ -66,10 +68,12 @@ def do_work(reply,conn):
 	
 	for i, url in enumerate(blob_urls):
 		repo = requests.get(url, params=payload, headers=headers)
-		with open('./repo/{}.py'.format(i), 'w') as f:
-			files.append('./repo/{}.py'.format(i)) #list holding all the file names
+		filename= commitdir+ '{}.py'.format(i)
+		with open(filename, 'w') as f:
+			files.append(filename) #list holding all the file names
 			f.write(repo.text) #put text of all files in the commit into python files in directory repo
 	avg=getCC(files)
+	shutil.rmtree(commitdir)
 	if avg!=None:
 		msg="Complexity of commit: " + str(avg) 
 	else:
@@ -100,6 +104,7 @@ def getCC(files):
 		for result in results:
 			commit_complexity += int(result.complexity)
 			#print(commit_complexity)
+	
 	if numfiles !=0:	
 		return commit_complexity / numfiles
 	else: return None
