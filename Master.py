@@ -98,9 +98,11 @@ def recive_data(conn,addr,nxt):
 	#	notDone=False
 		
 def laod_commits():
-	token='fc8bac5dfd0f603b5471a13090a2a101a47a6e10'
+	token='9ac4ec87c0c8536a5995b1b8d813cc162ce7d2a7'
 	payload = {'access_token': token}
+	
 	#repo= requests.get('https://api.github.com/repos/nolanev/CS4400/commits', payload)	
+	#https://github.com/nolanev/CS4400
 	repo= requests.get('https://api.github.com/repos/nolanev/Distributed-File-System/commits', payload)
 	while 'next' in repo.links:
 		for item in repo.json():
